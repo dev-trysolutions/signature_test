@@ -30,8 +30,7 @@
             cursor: crosshair;
         }
 
-        button,
-        .brush-option {
+        button {
             margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
@@ -42,17 +41,8 @@
             border-radius: 5px;
         }
 
-        button:hover,
-        .brush-option:hover {
+        button:hover {
             background-color: #0056b3;
-        }
-
-        .brush-options {
-            margin-top: 10px;
-        }
-
-        .selected {
-            background-color: #0056b3 !important;
         }
     </style>
 </head>
@@ -65,26 +55,18 @@
         <br>
         <button id="clearBtn">Clear</button>
         <button id="downloadBtn">Download</button>
-        <div class="brush-options">
-            <button class="brush-option" data-width="2" data-color="#000">Slim</button>
-            <button class="brush-option" data-width="5" data-color="#000">Thick</button>
-            <button class="brush-option" data-width="10" data-color="#ff5733">Paint</button>
-        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let drawing = false;
-        let brushWidth = 2;
-        let brushColor = "#000";
-        let lastPos = { x: 0, y: 0 };
 
-        // Set the canvas background to white
+        // Set the canvas background to white (for better visibility)
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Get the position of the mouse/touch relative to the canvas
+        // Adjust touch/mouse positions for canvas offset
         function getPosition(event) {
             let x, y;
             if (event.touches) {
@@ -101,24 +83,20 @@
         function startDrawing(event) {
             event.preventDefault();
             drawing = true;
-            lastPos = getPosition(event);
+            const pos = getPosition(event);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
         }
 
-        // Draw smooth curves using quadratic curves for smoother lines
+        // Draw on the canvas
         function draw(event) {
             if (!drawing) return;
             event.preventDefault();
-
             const pos = getPosition(event);
-            ctx.beginPath();
-            ctx.moveTo(lastPos.x, lastPos.y);
-            ctx.quadraticCurveTo(lastPos.x, lastPos.y, pos.x, pos.y);
-            ctx.strokeStyle = brushColor;
-            ctx.lineWidth = brushWidth;
-            ctx.lineCap = "round";  // Make lines rounded for better smoothness
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = "#000";  // Signature color
+            ctx.lineWidth = 2;         // Signature line thickness
             ctx.stroke();
-
-            lastPos = pos;
         }
 
         // Stop drawing
@@ -130,7 +108,7 @@
         // Clear the canvas
         document.getElementById('clearBtn').addEventListener('click', function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillRect(0, 0, canvas.width, canvas.height); // Reset white background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);  // Reset the white background
         });
 
         // Download the signature as a PNG image
@@ -139,19 +117,6 @@
             link.download = 'signature.png';
             link.href = canvas.toDataURL();
             link.click();
-        });
-
-        // Change brush type based on selection
-        document.querySelectorAll('.brush-option').forEach(function (button) {
-            button.addEventListener('click', function () {
-                // Get selected brush width and color
-                brushWidth = parseInt(this.getAttribute('data-width'));
-                brushColor = this.getAttribute('data-color');
-
-                // Highlight the selected brush
-                document.querySelectorAll('.brush-option').forEach(btn => btn.classList.remove('selected'));
-                this.classList.add('selected');
-            });
         });
 
         // Mouse Events
