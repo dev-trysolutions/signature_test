@@ -62,47 +62,75 @@
         const ctx = canvas.getContext('2d');
         let drawing = false;
 
-        // Set the canvas background to white (optional, for better visibility)
+        // Set the canvas background to white (for better visibility)
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        function startDrawing(e) {
-            drawing = true;
-            ctx.beginPath();
-            ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+        // Adjust touch/mouse positions for canvas offset
+        function getPosition(event) {
+            let x, y;
+            if (event.touches) {
+                x = event.touches[0].clientX - canvas.offsetLeft;
+                y = event.touches[0].clientY - canvas.offsetTop;
+            } else {
+                x = event.clientX - canvas.offsetLeft;
+                y = event.clientY - canvas.offsetTop;
+            }
+            return { x, y };
         }
 
-        function draw(e) {
+        // Start drawing
+        function startDrawing(event) {
+            event.preventDefault();
+            drawing = true;
+            const pos = getPosition(event);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        // Draw on the canvas
+        function draw(event) {
             if (!drawing) return;
-            ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-            ctx.strokeStyle = "#000";  // Color of the signature
-            ctx.lineWidth = 2;         // Thickness of the signature line
+            event.preventDefault();
+            const pos = getPosition(event);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = "#000";  // Signature color
+            ctx.lineWidth = 2;         // Signature line thickness
             ctx.stroke();
         }
 
-        function stopDrawing() {
+        // Stop drawing
+        function stopDrawing(event) {
             drawing = false;
+            event.preventDefault();
         }
 
-        // Mouse events
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseout', stopDrawing);
-
-        // Clear canvas
+        // Clear the canvas
         document.getElementById('clearBtn').addEventListener('click', function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillRect(0, 0, canvas.width, canvas.height); // Reset background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);  // Reset the white background
         });
 
-        // Download the signature as an image
+        // Download the signature as a PNG image
         document.getElementById('downloadBtn').addEventListener('click', function () {
             const link = document.createElement('a');
             link.download = 'signature.png';
             link.href = canvas.toDataURL();
             link.click();
         });
+
+        // Mouse Events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch Events for mobile devices
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+
     </script>
 
 </body>
