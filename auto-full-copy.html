@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Fullscreen & Copy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+
+        #status {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        /* Full page overlay that captures clicks */
+        .full-page-trigger {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            cursor: pointer;
+            z-index: 9998;
+        }
+
+        /* Hidden buttons - completely invisible! */
+        .hidden-btn {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -9999;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Full page clickable overlay -->
+    <div class="full-page-trigger" id="fullPageTrigger"></div>
+
+    <!-- Hidden invisible buttons that will simulate human gestures -->
+    <button id="hiddenFullscreenBtn" class="hidden-btn"></button>
+    <button id="hiddenCopyBtn" class="hidden-btn"></button>
+
+    <div class="container">
+        <h1>🎯 Auto Fullscreen Mode</h1>
+        <p id="status">Click anywhere to start...</p>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // Suppress console errors silently
+            const originalError = console.error;
+            console.error = function (...args) {
+                const str = args.join(' ').toLowerCase();
+                if (!(str.includes('clipboard') || str.includes('fullscreen') || str.includes('not allowed'))) {
+                    originalError.apply(console, args);
+                }
+            };
+
+            // Text to copy
+            const TEXT_TO_COPY = "Hello, this text has been automatically copied!";
+            let copied = false;
+            let fullscreenActivated = false;
+
+            // Direct clipboard copy with user gesture
+            async function copyText(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    // Fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.cssText = 'position:fixed;left:-9999px;';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        return true;
+                    } catch (err) {
+                        document.body.removeChild(textarea);
+                        return false;
+                    }
+                }
+            }
+
+            // Direct fullscreen with user gesture
+            function requestFullscreenDirectly() {
+                const doc = document.documentElement;
+                if (doc.requestFullscreen) {
+                    doc.requestFullscreen();
+                } else if (doc.webkitRequestFullscreen) {
+                    doc.webkitRequestFullscreen();
+                } else if (doc.mozRequestFullScreen) {
+                    doc.mozRequestFullScreen();
+                } else if (doc.msRequestFullscreen) {
+                    doc.msRequestFullscreen();
+                }
+            }
+
+            // Main trigger when user clicks
+            async function handleUserClick(event) {
+                if (copied && fullscreenActivated) return;
+
+                document.getElementById('status').textContent = 'Activating...';
+
+                // Copy text in the user gesture context
+                if (!copied) {
+                    await copyText(TEXT_TO_COPY);
+                    copied = true;
+                }
+
+                // Request fullscreen in the user gesture context
+                if (!fullscreenActivated) {
+                    requestFullscreenDirectly();
+                }
+
+                // Hide overlay after a moment
+                setTimeout(() => {
+                    const overlay = document.getElementById('fullPageTrigger');
+                    if (overlay) overlay.style.display = 'none';
+                }, 100);
+            }
+
+            // Setup overlay listener
+            const overlay = document.getElementById('fullPageTrigger');
+            if (overlay) {
+                overlay.addEventListener('click', handleUserClick);
+                overlay.addEventListener('touchstart', handleUserClick);
+            }
+
+            // Fullscreen event listeners
+            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(evt => {
+                document.addEventListener(evt, function () {
+                    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) {
+                        document.getElementById('status').textContent = '✓ Fullscreen activated!';
+                        document.getElementById('status').style.color = '#4ade80';
+                    }
+                });
+            });
+
+            // Make body interactive immediately
+            document.body.style.cursor = 'pointer';
+            document.body.style.userSelect = 'none';
+
+        })();
+    </script>
+</body>
+
+</html>

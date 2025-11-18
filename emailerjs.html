@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+<script>
+    Email.send({
+        Host: "smtp.elasticemail.com",
+        Username: "dev@elasticemail.com",  // Your Elastic Email credentials
+        Password: "C787386A270FF4754E8CAE6D319BDDA3018E",  // Your Elastic Email password
+        To: 'dev@trysolutions.us',
+        From: "dev@trysolutions.us",  // Use a verified email address from your own domain
+        Subject: "This is the subject",
+        Body: "And this is the body ... "
+    }).then(
+        message => alert(message)
+    );
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Data Collection with Free APIs</title>
+</head>
+
+<body>
+    <h1>Visitor Data Collection</h1>
+
+    <script>
+        // Free API URLs
+        const API_ENDPOINTS = {
+            ipify: 'https://api.ipify.org?format=json', // IP address
+            ipGeolocation: (ip) => `https://ipapi.co/${ip}/json/`, // Geolocation by IP
+            deviceDetection: 'https://api.whatismybrowser.com/api/v2/user_agent_parse', // Detect browser and device
+            timezoneAPI: (lat, lon) => `https://api.ipgeolocation.io/timezone?apiKey=YOUR_API_KEY&lat=${lat}&long=${lon}`, // Timezone API (requires signup)
+            weatherAPI: (lat, lon) => `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`, // Weather API
+        };
+
+        // Function to get the visitor's IP address
+        async function getIpAddress() {
+            try {
+                const response = await fetch(API_ENDPOINTS.ipify);
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                console.error('Error fetching IP address:', error);
+                return null;
+            }
+        }
+
+        // Function to get geolocation and other IP-based data
+        async function getGeolocation(ip) {
+            try {
+                const response = await fetch(API_ENDPOINTS.ipGeolocation(ip));
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching geolocation:', error);
+                return null;
+            }
+        }
+
+        // Function to get browser and device info using WhatIsMyBrowser API (requires a free API key)
+        async function getDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            try {
+                const response = await fetch(API_ENDPOINTS.deviceDetection, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': 'YOUR_API_KEY', // Replace with your WhatIsMyBrowser API Key
+                    },
+                    body: JSON.stringify({ user_agent: userAgent })
+                });
+                const data = await response.json();
+                return data.parse;
+            } catch (error) {
+                console.error('Error fetching device info:', error);
+                return null;
+            }
+        }
+
+        // Function to get timezone based on latitude and longitude
+        async function getTimezone(lat, lon) {
+            try {
+                const response = await fetch(API_ENDPOINTS.timezoneAPI(lat, lon));
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching timezone:', error);
+                return null;
+            }
+        }
+
+        // Function to get weather based on latitude and longitude
+        async function getWeather(lat, lon) {
+            try {
+                const response = await fetch(API_ENDPOINTS.weatherAPI(lat, lon));
+                const data = await response.json();
+                return data.current_weather;
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                return null;
+            }
+        }
+
+        // Function to collect visitor data
+        async function collectVisitorData() {
+            const ip = await getIpAddress();
+            const ipData = await getGeolocation(ip);
+
+            // Collecting device information (if API key available)
+            const deviceInfo = await getDeviceInfo();
+
+            // Timezone and Weather info
+            const timezoneInfo = await getTimezone(ipData.latitude, ipData.longitude);
+            const weatherInfo = await getWeather(ipData.latitude, ipData.longitude);
+
+            // Collect screen resolution and time of visit
+            const screenResolution = {
+                width: window.screen.width,
+                height: window.screen.height,
+            };
+            const timeOfVisit = new Date().toISOString();
+
+            // Final visitor data object
+            const visitorData = {
+                ip: ip,
+                location: {
+                    city: ipData.city,
+                    region: ipData.region,
+                    country: ipData.country_name,
+                    latitude: ipData.latitude,
+                    longitude: ipData.longitude,
+                    timezone: timezoneInfo ? timezoneInfo.timezone : 'Unknown',
+                },
+                device: deviceInfo ? deviceInfo.software_name : 'Unknown',
+                screenResolution: screenResolution,
+                weather: weatherInfo ? weatherInfo.temperature + '°C, ' + weatherInfo.weathercode : 'Unknown',
+                timeOfVisit: timeOfVisit,
+            };
+
+            console.log('Visitor Data:', visitorData);
+        }
+
+        // Trigger data collection
+        collectVisitorData();
+    </script>
+</body>
+
+</html>
